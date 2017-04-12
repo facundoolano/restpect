@@ -121,14 +121,14 @@ The main assertion function is `restpect.core/expect`:
 The first argument (usually a clj-http response map, although it can be
 any value), will be compared against the given spec with the following criteria:
 
-* For maps, compare each path of the spec with the same path of the response,
-using expect recursively.
-* For other collections, compare each element in the spec with the same element
-in the response using expect recursively.
+* For maps, compare the value of each key in the spec with the value at the same key
+of the response, using `expect` recursively.
+* For other collections, compare each element in the spec with the same element at the
+same position in the response, using `expect` recursively.
 * For functions, pass the value in the response to the spec function expecting a
 truthy result.
 * For Regular expressions match the spec with the actual value.
-* For the rest of the value, expect the spec and the response values to match.
+* For the rest of the values, expect the spec and the response values to be equal.
 
 Example:
 
@@ -156,7 +156,7 @@ rather than doing an exact comparison of the payloads.
 
 #### Status shorthands
 `restpect.core` also provides a set of wrappers around `expect` with the
-names of the different HTTP response status code: `ok`, `created`, `bad-request`,
+names of the different HTTP response status codes: `ok`, `created`, `bad-request`,
 `not-found`, etc.
 
 These helpers implicitly validate the `:status` value of the given response map,
@@ -175,12 +175,13 @@ Using status shorthands, the example from the previous section becomes:
 ### Test reporter
 
 Restpect also provides a custom test reporter that adds request and response
-information in failures (provided by `expect`) and does some formatting:
+information to failure messages (provided by `expect`) and does some formatting:
 
 ![example report](report.png)
 
-The report multimethod can be found in `restpect.report/report` and can work
-with plugins that allow to customize the test reporter like [eftest](https://github.com/weavejester/eftest)
+The report multimethod can be found in `restpect.report/report` and can be used
+with plugins that allow to override the test reporter, like 
+[eftest](https://github.com/weavejester/eftest)
 and [lein-test-refresh](https://github.com/jakemcc/lein-test-refresh):
 
 ``` clojure
@@ -189,6 +190,6 @@ and [lein-test-refresh](https://github.com/jakemcc/lein-test-refresh):
 :test-refresh {:report restpect.report/report}
 ```
 
-If you already work with a custom reporter and just want add some
-request/reponse data to its output, consider adding a a handler for
-`:type :response` as seen [here]().
+If you already work with a custom reporter and just want to add some
+request/reponse data to its output, consider adding a defmethod for
+`:type :response` as seen [here](https://github.com/facundoolano/restpect/blob/master/src/restpect/report.clj#L89).
