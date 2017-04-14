@@ -23,6 +23,7 @@
 (defn- as-vec [v] (if (coll? v) v [v]))
 (defn- as-map [v] (if (map? v) v  (into {} (map-indexed vector v))))
 
+;; TODO improve readability
 (defn- reduce-map
   "Reduce m to a flat map of path/values:
     {:body [{:message :hi}]} -> {[:body 0 :message] :hi}"
@@ -37,24 +38,42 @@
             {} (as-map m))
     m))
 
-(defn- compare-and-report
-  ([expected actual] (compare-and-report expected actual nil))
-  ([expected actual path]
-   (cond (fn? expected)
-         (when-not (expected actual)
-           (get-fail-report actual "to pass function"
-                            (str actual (when path (str " in " path))
-                                 " does not hold true for the expected function.")))
+(defprotocol Expectable
+  "Defines how an expected value should be compared against the given actual
+  value."
+  (compare-and-report [expected actual path]
+    "Compare expected and actual value and return a report map if comparison
+     fails."))
 
-         (instance? java.util.regex.Pattern expected)
-         (when-not (re-matches expected actual)
-           (get-fail-report actual (str "to match regex " expected)
-                            (str actual (when path (str " in " path))
-                                 " does not match " expected)))
+(extend-protocol Expectable
+  clojure.lang.IPersistentCollection
+  (compare-and-report [expected actual path]
+    (loop [spec (seq (reduce-map expected))]
+      (if-let [[[path expected] & tail] spec]
+        (let [actual (get-in actual path)]
+          (or (compare-and-report expected actual path) (recur tail))))))
 
-         (not= expected actual)
-         (get-fail-report actual expected
-                          (str actual (when path (str " in " path)) " does not equal " expected ".")))))
+  clojure.lang.Fn
+  (compare-and-report [expected actual path]
+    (when-not (expected actual)
+      ;; TODO improve this message with readable function
+      (get-fail-report actual "to pass function"
+                       (str actual (when path (str " in " path))
+                            " does not hold true for the expected function."))))
+
+  java.util.regex.Pattern
+  (compare-and-report [expected actual path]
+    (when-not (re-matches expected actual)
+      (get-fail-report actual (str "to match regex " expected)
+                       (str actual (when path (str " in " path))
+                            " does not match " expected))))
+
+  java.lang.Object
+  (compare-and-report
+    [expected actual path]
+    (when-not (= expected actual)
+      (get-fail-report actual expected
+                       (str actual (when path (str " in " path)) " does not equal " expected ".")))))
 
 (defn expect
   "Given a response map and a spec map, check every condition of spec is
@@ -62,12 +81,7 @@
   in which case equality is tested, or functions that the actual values should
   pass."
   [response spec]
-  (if-let [result (if (coll? spec)
-                    (loop [spec (seq (reduce-map spec))]
-                      (if-let [[[path expected] & tail] spec]
-                        (let [actual (get-in response path)]
-                          (or (compare-and-report expected actual path) (recur tail)))))
-                    (compare-and-report spec response))]
+  (if-let [result (compare-and-report spec response nil)]
     (do (do-report result)
         (do-report {:type :response :response response}))
     (do-report {:type :pass}))
