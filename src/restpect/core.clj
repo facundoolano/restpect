@@ -43,6 +43,14 @@
             {} (as-map m))
     m))
 
+(defn- pretty-fname [f]
+  (-> (str f)
+      (clojure.main/demunge)
+      (clojure.string/split #"/")
+      (last)
+      (clojure.string/split #"@")
+      (first)))
+
 (defprotocol Expectable
   "Defines how an expected value should be compared against the given actual
   value."
@@ -62,8 +70,7 @@
   clojure.lang.Fn
   (compare-and-report [expected actual path]
     (when-not (expected actual)
-      ;; TODO improve this message with readable function
-      (get-fail-report actual "to pass function"
+      (get-fail-report actual (str "to pass function: " (pretty-fname expected))
                        (str actual (when path (str " in " path))
                             " does not hold true for the expected function."))))
 
