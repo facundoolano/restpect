@@ -20,21 +20,26 @@
                       :expected expected
                       :message msg})))
 
-(defn- as-vec [v] (if (coll? v) v [v]))
-(defn- as-map [v] (if (map? v) v  (into {} (map-indexed vector v))))
+(defn- as-vec
+  "If value isn't a collection, wrap it in a vector."
+  [v] (if (coll? v) v [v]))
 
-;; TODO improve readability
-(defn- reduce-map
+(defn- as-map
+  "Turn non map collections into {index element} maps."
+  [v]
+  (if (map? v) v  (into {} (map-indexed vector v))))
+
+(defn- flatten-map
   "Reduce m to a flat map of path/values:
     {:body [{:message :hi}]} -> {[:body 0 :message] :hi}"
   [m]
   (if (coll? m)
     (reduce (fn [new-map [k v]]
               (if (coll? v)
-                (reduce-map (into new-map (map (fn [[k2 v2]]
-                                                 [(conj (as-vec k) k2) v2])
-                                               (as-map v))))
-                (assoc new-map (if (coll? k) k [k]) v)))
+                (flatten-map (into new-map (map (fn [[k2 v2]]
+                                                  [(conj (as-vec k) k2) v2])
+                                                (as-map v))))
+                (assoc new-map (as-vec k) v)))
             {} (as-map m))
     m))
 
@@ -46,9 +51,10 @@
      fails."))
 
 (extend-protocol Expectable
+
   clojure.lang.IPersistentCollection
   (compare-and-report [expected actual path]
-    (loop [spec (seq (reduce-map expected))]
+    (loop [spec (seq (flatten-map expected))]
       (if-let [[[path expected] & tail] spec]
         (let [actual (get-in actual path)]
           (or (compare-and-report expected actual path) (recur tail))))))
