@@ -63,7 +63,7 @@ Or, using status shorthands:
 Add the following to your project map as a dependency:
 
 ```clojure
-[restpect "0.1.0"]
+[restpect "0.1.1"]
 ```
 
 ## Reference
@@ -166,7 +166,7 @@ information to failure messages (provided by `expect`) and does some formatting:
 ![example report](report.png)
 
 The report multimethod can be found in `restpect.report/report` and can be used
-with plugins that allow to override the test reporter, like 
+with plugins that allow to override the test reporter, like
 [eftest](https://github.com/weavejester/eftest)
 and [lein-test-refresh](https://github.com/jakemcc/lein-test-refresh):
 
