@@ -58,6 +58,7 @@
     "Compare expected and actual value and return a report map if comparison
      fails."))
 
+;; TODO reduce the whole when-not and get-fail-report duplication
 (extend-protocol Expectable
 
   clojure.lang.IPersistentCollection
@@ -86,7 +87,14 @@
     [expected actual path]
     (when-not (= expected actual)
       (get-fail-report actual expected
-                       (str actual (when path (str " in " path)) " does not equal " expected ".")))))
+                       (str actual (when path (str " in " path)) " does not equal " expected "."))))
+
+  nil
+  (compare-and-report
+    [expected actual path]
+    (when-not (nil? actual)
+      (get-fail-report actual expected
+                       (str actual (when path (str " in " path)) " is not nil.")))))
 
 (defn expect
   "Given a response map and a spec map, check every condition of spec is
