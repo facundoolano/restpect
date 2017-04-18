@@ -1,8 +1,9 @@
 (ns restpect.report
   "Customize test reporter to add useful http context on failures."
   (:require [clojure.test :refer [do-report testing-contexts-str
-                                           testing-vars-str *testing-contexts*
-                                           with-test-out inc-report-counter]]
+                                  testing-vars-str *testing-contexts*
+                                  with-test-out inc-report-counter
+                                  *report-counters*]]
             [clojure.string :as str]
             [puget.color.ansi :as ansi]
             [ultra.test.diff :as ultra]))
@@ -49,10 +50,7 @@
 
 ;; Custom definitions
 
-(def ^:dynamic *test-failed?* (ref false))
-
 (defmethod report :fail [m]
-  (dosync (ref-set *test-failed?* true))
   (with-test-out
     (inc-report-counter :fail)
     (println (str "    " (ansi/sgr (str "✗ " (testing-vars-str m)) :red)))
@@ -79,12 +77,19 @@
         (prn actual))
       (println))))
 
+(def ^:dynamic *before-counters* (ref nil))
+
 (defmethod report :begin-test-var [m]
-  (dosync (ref-set *test-failed?* false)))
+  (dosync (ref-set *before-counters* @*report-counters*)))
 
 (defmethod report :end-test-var [m]
-  (when-not @*test-failed?*
-    (println (str "    " (ansi/sgr "✓ " :green) (pretty-test-name (:var m))))))
+  (let [before (select-keys @*before-counters* [:pass :fail :error])
+        after (select-keys @*report-counters* [:pass :fail :error])]
+    (cond (= before after)
+          (println (ansi/sgr (str "    - " (pretty-test-name (:var m))) :cyan))
+
+          (not= (:pass before) (:pass after))
+          (println (str "    " (ansi/sgr "✓ " :green) (pretty-test-name (:var m)))))))
 
 (defmethod report :response [m]
   (print-response (:response m)))
