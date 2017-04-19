@@ -64,7 +64,7 @@
 (defmethod report :error [m]
   (with-test-out
     (inc-report-counter :error)
-    (println (str "    " (ansi/sgr (str "✗ " (testing-vars-str m)) :red)))
+    (println (str "    " (ansi/sgr (str "! " (testing-vars-str m)) :red)))
     (when (seq *testing-contexts*) (println (testing-contexts-str)))
     (println)
     (when-let [message (:message m)]
@@ -84,11 +84,13 @@
 
 (defmethod report :end-test-var [m]
   (let [before (select-keys @*before-counters* [:pass :fail :error])
-        after (select-keys @*report-counters* [:pass :fail :error])]
-    (cond (= before after)
+        after (select-keys @*report-counters* [:pass :fail :error])
+        empty-test? (= before after)
+        passing-test? (= (dissoc before :pass) (dissoc after :pass))]
+    (cond empty-test?
           (println (ansi/sgr (str "    - " (pretty-test-name (:var m))) :cyan))
 
-          (not= (:pass before) (:pass after))
+          passing-test?
           (println (str "    " (ansi/sgr "✓ " :green) (pretty-test-name (:var m)))))))
 
 (defmethod report :response [m]
