@@ -63,7 +63,7 @@ Or, using status shorthands:
 Add the following to your project map as a dependency:
 
 ```clojure
-[restpect "0.1.2"]
+[restpect "0.1.3"]
 ```
 
 ## Reference
