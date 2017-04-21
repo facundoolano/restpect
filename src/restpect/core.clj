@@ -3,24 +3,6 @@
   (:require [clojure.test :refer [do-report]]
             [clojure.string :as str]))
 
-;; stacktrace code taken from clojure.test
-(defn- stacktrace-file-and-line
-  [stacktrace]
-  (if (seq stacktrace)
-    (let [^StackTraceElement s (first stacktrace)]
-      {:file (.getFileName s) :line (.getLineNumber s)})
-    {:file nil :line nil}))
-
-(defn- get-file-and-line []
-  (stacktrace-file-and-line
-   (drop-while
-    #(let [cl-name (.getClassName ^StackTraceElement %)]
-       (or (str/starts-with? cl-name "java.lang.")
-           (str/starts-with? cl-name "clojure.test$")
-           (str/starts-with? cl-name "clojure.lang.")
-           (str/includes? cl-name "restpect.core$")))
-    (.getStackTrace (Thread/currentThread)))))
-
 (defn- as-vec
   "If value isn't a collection, wrap it in a vector."
   [v] (if (coll? v) v [v]))
@@ -104,6 +86,24 @@
        :expected nil
        :message  (str actual (when path (str " in " path)) " is not nil.")})))
 
+;; stacktrace code taken from clojure.test
+(defn- stacktrace-file-and-line
+  [stacktrace]
+  (if (seq stacktrace)
+    (let [^StackTraceElement s (first stacktrace)]
+      {:file (.getFileName s) :line (.getLineNumber s)})
+    {:file nil :line nil}))
+
+(defn- get-file-and-line []
+  (stacktrace-file-and-line
+   (drop-while
+    #(let [cl-name (.getClassName ^StackTraceElement %)]
+       (or (str/starts-with? cl-name "java.lang.")
+           (str/starts-with? cl-name "clojure.test$")
+           (str/starts-with? cl-name "clojure.lang.")
+           (str/includes? cl-name "restpect.core$")))
+    (.getStackTrace (Thread/currentThread)))))
+
 (defn expect
   "Given a response map and a spec map, check every condition of spec is
   conformed by the response at the same path. Conditions can be concrete values,
@@ -117,7 +117,8 @@
   response)
 
 ;; HELPER PREDICATES
-(def defined? (comp not nil?))
+;; use defn so they have proper names in their metadata
+(defn defined? [v] (not (nil? v)))
 
 (defn has-keys [keys] #(every? % keys))
 (defn one-of [values] #((set values) %))
