@@ -3,17 +3,23 @@
   (:require [clojure.test :refer [do-report]]
             [clojure.string :as str]))
 
-;; yanked some clojure.test code to properly report failure file and line
-;; FIXME don't rely on private vars
+;; stacktrace code taken from clojure.test
+(defn- stacktrace-file-and-line
+  [stacktrace]
+  (if (seq stacktrace)
+    (let [^StackTraceElement s (first stacktrace)]
+      {:file (.getFileName s) :line (.getLineNumber s)})
+    {:file nil :line nil}))
+
 (defn- get-file-and-line []
-  (let [do-get #'clojure.test/stacktrace-file-and-line]
-    (do-get (drop-while
-             #(let [cl-name (.getClassName ^StackTraceElement %)]
-                (or (str/starts-with? cl-name "java.lang.")
-                    (str/starts-with? cl-name "clojure.test$")
-                    (str/starts-with? cl-name "clojure.lang.")
-                    (str/includes? cl-name "restpect.core$")))
-             (.getStackTrace (Thread/currentThread))))))
+  (stacktrace-file-and-line
+   (drop-while
+    #(let [cl-name (.getClassName ^StackTraceElement %)]
+       (or (str/starts-with? cl-name "java.lang.")
+           (str/starts-with? cl-name "clojure.test$")
+           (str/starts-with? cl-name "clojure.lang.")
+           (str/includes? cl-name "restpect.core$")))
+    (.getStackTrace (Thread/currentThread)))))
 
 (defn- as-vec
   "If value isn't a collection, wrap it in a vector."
