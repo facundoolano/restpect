@@ -4,21 +4,16 @@
             [clojure.string :as str]))
 
 ;; yanked some clojure.test code to properly report failure file and line
-(defn- get-fail-report
-  "build a report map, patching file/line logic to exclude this file"
-  [actual expected msg]
-  (let [get-file-and-line #'clojure.test/stacktrace-file-and-line
-        file-line (get-file-and-line (drop-while
-                                      #(let [cl-name (.getClassName ^StackTraceElement %)]
-                                         (or (str/starts-with? cl-name "java.lang.")
-                                             (str/starts-with? cl-name "clojure.test$")
-                                             (str/starts-with? cl-name "clojure.lang.")
-                                             (str/includes? cl-name "restpect.core$")))
-                                      (.getStackTrace (Thread/currentThread))))]
-    (merge file-line {:type :fail
-                      :actual actual
-                      :expected expected
-                      :message msg})))
+;; FIXME don't rely on private vars
+(defn- get-file-and-line []
+  (let [do-get #'clojure.test/stacktrace-file-and-line]
+    (do-get (drop-while
+             #(let [cl-name (.getClassName ^StackTraceElement %)]
+                (or (str/starts-with? cl-name "java.lang.")
+                    (str/starts-with? cl-name "clojure.test$")
+                    (str/starts-with? cl-name "clojure.lang.")
+                    (str/includes? cl-name "restpect.core$")))
+             (.getStackTrace (Thread/currentThread))))))
 
 (defn- as-vec
   "If value isn't a collection, wrap it in a vector."
@@ -51,50 +46,57 @@
       (clojure.string/split #"@")
       (first)))
 
-(defprotocol Expectable
+(defprotocol Checkable
   "Defines how an expected value should be compared against the given actual
   value."
-  (compare-and-report [expected actual path]
-    "Compare expected and actual value and return a report map if comparison
-     fails."))
+  (check [expected actual path]
+    "Compare expected and actual value and return a report map with
+     :expected :actual and :message if comparison fails."))
 
-;; TODO reduce the whole when-not and get-fail-report duplication
-(extend-protocol Expectable
+(extend-protocol Checkable
 
+  ;; TODO compare each element in the map regardless of the position
+  ;; clojure.lang.IPersistentSet
+  ;; (check [expected actual path])
+
+  ;; TODO maybe separate map from other collections?
   clojure.lang.IPersistentCollection
-  (compare-and-report [expected actual path]
+  (check [expected actual path]
     (loop [spec (seq (flatten-map expected))]
       (if-let [[[path expected] & tail] spec]
         (let [actual (get-in actual path)]
-          (or (compare-and-report expected actual path) (recur tail))))))
+          (or (check expected actual path) (recur tail))))))
 
   clojure.lang.Fn
-  (compare-and-report [expected actual path]
+  (check [expected actual path]
     (when-not (expected actual)
-      (get-fail-report actual (str "to pass function: " (pretty-fname expected))
-                       (str actual (when path (str " in " path))
-                            " does not hold true for the expected function."))))
+      {:actual   actual
+       :expected (str "to pass function: " (pretty-fname expected))
+       :message  (str actual (when path (str " in " path))
+                      " does not hold true for the expected function.")}))
 
   java.util.regex.Pattern
-  (compare-and-report [expected actual path]
+  (check [expected actual path]
     (when-not (re-find expected actual)
-      (get-fail-report actual (str "to match regex " expected)
-                       (str actual (when path (str " in " path))
-                            " does not match " expected))))
+      {:actual   actual
+       :expected (str "to match regex " expected)
+       :message  (str actual (when path (str " in " path))
+                      " does not match " expected)}))
 
   java.lang.Object
-  (compare-and-report
-    [expected actual path]
+  (check [expected actual path]
     (when-not (= expected actual)
-      (get-fail-report actual expected
-                       (str actual (when path (str " in " path)) " does not equal " expected "."))))
+      {:actual   actual
+       :expected expected
+       :message  (str actual (when path (str " in " path))
+                      " does not equal " expected ".")}))
 
   nil
-  (compare-and-report
-    [expected actual path]
+  (check [expected actual path]
     (when-not (nil? actual)
-      (get-fail-report actual expected
-                       (str actual (when path (str " in " path)) " is not nil.")))))
+      {:actual   actual
+       :expected nil
+       :message  (str actual (when path (str " in " path)) " is not nil.")})))
 
 (defn expect
   "Given a response map and a spec map, check every condition of spec is
@@ -102,8 +104,8 @@
   in which case equality is tested, or functions that the actual values should
   pass."
   [response spec]
-  (if-let [result (compare-and-report spec response nil)]
-    (do (do-report result)
+  (if-let [result (check spec response nil)]
+    (do (do-report (merge {:type :fail} (get-file-and-line) result))
         (do-report {:type :response :response response}))
     (do-report {:type :pass}))
   response)
