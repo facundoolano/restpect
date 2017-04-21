@@ -94,4 +94,4 @@
           (println (str "    " (ansi/sgr "✓ " :green) (pretty-test-name (:var m)))))))
 
 (defmethod report :response [m]
-  (print-response (:response m)))
+  (with-test-out (print-response (:response m))))

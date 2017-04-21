@@ -178,4 +178,17 @@ and [lein-test-refresh](https://github.com/jakemcc/lein-test-refresh):
 
 If you already work with a custom reporter and just want to add some
 request/reponse data to its output, consider adding a defmethod for
-`:type :response` as seen [here](https://github.com/facundoolano/restpect/blob/master/src/restpect/report.clj#L89).
+`:type :response`, for example:
+
+``` clojure
+(require '[restpect.report :refer [print-response]]
+         '[eftest.report.progress :as eftest]
+         '[clojure.test :refer [with-test-out]])
+
+(defmulti report :type)
+(defmethod report :default [m] (eftest/report m))
+(defmethod report :response [m]
+  (with-test-out
+    (println "\r" (repeat 80 " ") "\033[F" "\033[F")
+    (print-response (:response m))))
+```
