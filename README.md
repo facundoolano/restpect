@@ -63,7 +63,7 @@ Or, using status shorthands:
 Add the following to your project map as a dependency:
 
 ```clojure
-[restpect "0.1.3"]
+[restpect "0.1.4"]
 ```
 
 ## Reference
@@ -103,7 +103,7 @@ of the response, using `expect` recursively.
 same position in the response, using `expect` recursively.
 * For functions, pass the value in the response to the spec function expecting a
 truthy result.
-* For Regular expressions match the spec with the actual value.
+* For Regular expressions match the spec with the actual value (using [re-find](https://clojuredocs.org/clojure.core/re-find)).
 * For the rest of the values, expect the spec and the response values to be equal.
 
 Example:

@@ -77,7 +77,7 @@
 
   java.util.regex.Pattern
   (compare-and-report [expected actual path]
-    (when-not (re-matches expected actual)
+    (when-not (re-find expected actual)
       (get-fail-report actual (str "to match regex " expected)
                        (str actual (when path (str " in " path))
                             " does not match " expected))))
