@@ -3,29 +3,6 @@
   (:require [clojure.test :refer [do-report]]
             [clojure.string :as str]))
 
-(defn- as-vec
-  "If value isn't a collection, wrap it in a vector."
-  [v] (if (coll? v) v [v]))
-
-(defn- as-map
-  "Turn non map collections into {index element} maps."
-  [v]
-  (if (map? v) v  (into {} (map-indexed vector v))))
-
-(defn- flatten-map
-  "Reduce m to a flat map of path/values:
-    {:body [{:message :hi}]} -> {[:body 0 :message] :hi}"
-  [m]
-  (if (coll? m)
-    (reduce (fn [new-map [k v]]
-              (if (coll? v)
-                (flatten-map (into new-map (map (fn [[k2 v2]]
-                                                  [(conj (as-vec k) k2) v2])
-                                                (as-map v))))
-                (assoc new-map (as-vec k) v)))
-            {} (as-map m))
-    m))
-
 (defn- pretty-fname [f]
   (-> (str f)
       (clojure.main/demunge)
@@ -41,19 +18,29 @@
     "Compare expected and actual value and return a report map with
      :expected :actual and :message if comparison fails."))
 
+;; TODO make :path part of the returned map?
+;; and maybe remove :message, since its kinda redundant with expect
 (extend-protocol Checkable
 
-  ;; TODO compare each element in the map regardless of the position
+  clojure.lang.IPersistentMap
+  (check [expected actual path]
+    (reduce
+     (fn [_ [k expected]]
+       (let [actual (get actual k)
+             path   (conj path k)
+             result (check expected actual path)]
+         (when result (reduced result))))
+     nil expected))
+
+  ;; TODO look for each element of the set in the actual collection,
+  ;; regardless of the position
   ;; clojure.lang.IPersistentSet
   ;; (check [expected actual path])
 
-  ;; TODO maybe separate map from other collections?
   clojure.lang.IPersistentCollection
   (check [expected actual path]
-    (loop [spec (seq (flatten-map expected))]
-      (if-let [[[path expected] & tail] spec]
-        (let [actual (get-in actual path)]
-          (or (check expected actual path) (recur tail))))))
+    (let [expected (into {} (map-indexed vector expected))]
+      (check expected actual path)))
 
   clojure.lang.Fn
   (check [expected actual path]
@@ -110,7 +97,7 @@
   in which case equality is tested, or functions that the actual values should
   pass."
   [response spec]
-  (if-let [result (check spec response nil)]
+  (if-let [result (check spec response [])]
     (do (do-report (merge {:type :fail} (get-file-and-line) result))
         (do-report {:type :response :response response}))
     (do-report {:type :pass}))
