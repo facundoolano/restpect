@@ -56,6 +56,8 @@
     (println (str "    " (ansi/sgr (str "✗ " (testing-vars-str m)) :red)))
     (when (seq *testing-contexts*) (println (testing-contexts-str)))
     (ultra/print-expected (:actual m) (:expected m))
+    (when-let [path (not-empty (:path m))]
+      (println "    path:" path))
     (when-let [message (:message m)]
       (println " message:" message))))
 

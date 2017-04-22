@@ -18,8 +18,6 @@
     "Compare expected and actual value and return a report map with
      :expected :actual and :message if comparison fails."))
 
-;; TODO make :path part of the returned map?
-;; and maybe remove :message, since its kinda redundant with expect
 (extend-protocol Checkable
 
   clojure.lang.IPersistentMap
@@ -51,32 +49,29 @@
   (check [expected actual path]
     (when-not (expected actual)
       {:actual   actual
-       :expected (str "to pass function: " (pretty-fname expected))
-       :message  (str actual (when path (str " in " path))
-                      " does not hold true for the expected function.")}))
+       :expected (str "to hold true for function: " (pretty-fname expected))
+       :path     path}))
 
   java.util.regex.Pattern
   (check [expected actual path]
     (when-not (re-find expected actual)
       {:actual   actual
        :expected (str "to match regex: " expected)
-       :message  (str actual (when path (str " in " path))
-                      " does not match " expected)}))
+       :path     path}))
 
   java.lang.Object
   (check [expected actual path]
     (when-not (= expected actual)
       {:actual   actual
        :expected expected
-       :message  (str actual (when path (str " in " path))
-                      " does not equal " expected ".")}))
+       :path     path}))
 
   nil
   (check [expected actual path]
     (when-not (nil? actual)
       {:actual   actual
        :expected nil
-       :message  (str actual (when path (str " in " path)) " is not nil.")})))
+       :path     path})))
 
 ;; stacktrace code taken from clojure.test
 (defn- stacktrace-file-and-line
