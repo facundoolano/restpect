@@ -32,10 +32,15 @@
          (when result (reduced result))))
      nil expected))
 
-  ;; TODO look for each element of the set in the actual collection,
-  ;; regardless of the position
-  ;; clojure.lang.IPersistentSet
-  ;; (check [expected actual path])
+  clojure.lang.IPersistentSet
+  (check [expected actual path]
+    (reduce
+     (fn [_ expected]
+       (when (every? #(check expected % path) actual)
+         (reduced {:actual   actual
+                   :expected (str "some element to match: " expected)
+                   :path     (conj path #{})})))
+     nil expected))
 
   clojure.lang.IPersistentCollection
   (check [expected actual path]
@@ -54,7 +59,7 @@
   (check [expected actual path]
     (when-not (re-find expected actual)
       {:actual   actual
-       :expected (str "to match regex " expected)
+       :expected (str "to match regex: " expected)
        :message  (str actual (when path (str " in " path))
                       " does not match " expected)}))
 

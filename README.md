@@ -99,6 +99,9 @@ any value), will be compared against the given spec with the following criteria:
 
 * For maps, compare the value of each key in the spec with the value at the same key
 of the response, using `expect` recursively.
+* For sets, check that each element in the spec matches some element in the response,
+comparing with `expect` recursively. This is useful to look for an element somewhere
+in a list, regardless of the position.
 * For other collections, compare each element in the spec with the same element at the
 same position in the response, using `expect` recursively.
 * For functions, pass the value in the response to the spec function expecting a
