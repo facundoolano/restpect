@@ -9,10 +9,11 @@
             [ultra.test.diff :as ultra]))
 
 (defn request-str [m]
-  (-> (get-in m [:request :method])
-      (name)
-      (clojure.string/upper-case)
-      (str " " (get-in m [:request :url]))))
+  (when-let [req (:request m)]
+    (-> (:method req)
+        (name)
+        (clojure.string/upper-case)
+        (str " " (:url req)))))
 
 (defn print-response
   [res]
