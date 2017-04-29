@@ -1,4 +1,4 @@
-(defproject restpect "0.2.0"
+(defproject restpect "0.2.1"
   :description "Succint and readable integration tests over RESTful APIs"
   :url "https://github.com/facundoolano/restpect"
   :license {:name "Eclipse Public License"
