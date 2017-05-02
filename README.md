@@ -116,7 +116,7 @@ Example:
         {:status 404
          :body   [{:result  nil?
                    :code    125
-                   :message #".+ not found"}]})
+                   :message #"not found"}]})
 ```
 
 This assertion is equivalent to the following:
@@ -126,7 +126,7 @@ This assertion is equivalent to the following:
   (is (= 404 (:status res)))
   (is (nil? (get-in res [:body 0 :result])))
   (is (= 125 (get-in res [:body 0 :code])))
-  (is (re-matches #".+ not found" (get-in res [:body 0 :message]))))
+  (is (re-find #"not found" (get-in res [:body 0 :message]))))
 ```
 
 As seen in the example, `expect` is opinionated in the sense that it makes it
@@ -148,7 +148,7 @@ Using status shorthands, the example from the previous section becomes:
 (not-found (GET url)
            [{:result  nil?
              :code    125
-             :message #".+ not found"}])
+             :message #"not found"}])
 ```
 
 Another example:
