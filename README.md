@@ -12,10 +12,10 @@ This test:
 (deftest create-user
   (let [res (http/put "http://example.com/api/v1/users/john"
                       {:content-type :json
-                       :as :json
-                       :form-params {:first-name "John"
-                                     :last-name "Doe"
-                                     :email "john@example.com"}})]
+                       :as           :json
+                       :form-params  {:first-name "John"
+                                      :last-name  "Doe"
+                                      :email      "john@example.com"}})]
     (is (= 201 (:status res)))
     (is (= "John" (get-in res [:body :first-name])))
     (is (= "Doe" (get-in res [:body :last-name])))
@@ -32,13 +32,13 @@ Can be rewritten with restpect like:
 
 (deftest create-user
   (expect (PUT "http://example.com/api/v1/users/john" {:first-name "John"
-                                                       :last-name "Doe"
-                                                       :email "john@example.com"})
+                                                       :last-name  "Doe"
+                                                       :email      "john@example.com"})
           {:status 201
-           :body {:first-name "John"
-                  :last-name "Doe"
-                  :email "john@example.com"
-                  :user-id integer?}}))
+           :body   {:first-name "John"
+                    :last-name  "Doe"
+                    :email      "john@example.com"
+                    :user-id    integer?}}))
 ```
 
 Or, using status shorthands:
@@ -50,12 +50,12 @@ Or, using status shorthands:
 
 (deftest create-user
   (created (PUT "http://example.com/api/v1/users/john" {:first-name "John"
-                                                        :last-name "Doe"
-                                                        :email "john@example.com"})
+                                                        :last-name  "Doe"
+                                                        :email      "john@example.com"})
            {:first-name "John"
-            :last-name "Doe"
-            :email "john@example.com"
-            :user-id integer?}))
+            :last-name  "Doe"
+            :email      "john@example.com"
+            :user-id    integer?}))
 ```
 
 ## Installation
@@ -113,10 +113,10 @@ Example:
 
 ``` clojure
 (expect (GET url)
-    {:status 404
-     :body [{:result nil?
-             :code 125
-             :message #".+ not found"}]})
+        {:status 404
+         :body   [{:result  nil?
+                   :code    125
+                   :message #".+ not found"}]})
 ```
 
 This assertion is equivalent to the following:
@@ -146,9 +146,9 @@ Using status shorthands, the example from the previous section becomes:
 
 ``` clojure
 (not-found (GET url)
-    [{:result nil?
-      :code 125
-      :message #".+ not found"}])
+           [{:result  nil?
+             :code    125
+             :message #".+ not found"}])
 ```
 
 Another example:
