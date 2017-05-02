@@ -30,7 +30,7 @@ Can be rewritten with restpect like:
          '[restpect.json :refer [PUT]]
          '[clojure.test :refer [deftest]])
 
-(deftest create-get-and-delete-user
+(deftest create-user
   (expect (PUT "http://example.com/api/v1/users/john" {:first-name "John"
                                                        :last-name "Doe"
                                                        :email "john@example.com"})
