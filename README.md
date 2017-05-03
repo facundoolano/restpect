@@ -3,59 +3,34 @@
 Restpect provides a set of functions to write succint and readable
 integration tests over RESTful APIs.
 
-This test:
-
 ```clojure
-(require '[clj-http.client :as http]
-         '[clojure.test :refer [deftest is]])
-
-(deftest create-user
-  (let [res (http/put "http://example.com/api/v1/users/john"
-                      {:content-type :json
-                       :as           :json
-                       :form-params  {:first-name "John"
-                                      :last-name  "Doe"
-                                      :email      "john@example.com"}})]
-    (is (= 201 (:status res)))
-    (is (= "John" (get-in res [:body :first-name])))
-    (is (= "Doe" (get-in res [:body :last-name])))
-    (is (= "john.doe@gmail.com" (get-in res [:body :email])))
-    (is (integer? (get-in res [:body :user-id])))))
-```
-
-Can be rewritten with restpect like:
-
-``` clojure
-(require '[restpect.core :refer [expect]]
-         '[restpect.json :refer [PUT]]
+(require '[restpect.core :refer [created ok not-found]]
+         '[restpect.json :refer [GET PUT DELETE]]
          '[clojure.test :refer [deftest]])
 
-(deftest create-user
-  (expect (PUT "http://example.com/api/v1/users/john" {:first-name "John"
-                                                       :last-name  "Doe"
-                                                       :email      "john@example.com"})
-          {:status 201
-           :body   {:first-name "John"
-                    :last-name  "Doe"
-                    :email      "john@example.com"
-                    :user-id    integer?}}))
-```
+(deftest create-get-and-delete-user
+  ;; expect 201 status response and body containing a :user-id integer
+  (created
+   (PUT "http://example.com/api/v1/users/john" {:email "john@example.com"})
+   {:user-id integer?})
 
-Or, using status shorthands:
+  ;; expect 200 status and body containing :user-id and :email
+  (ok
+   (GET "http://example.com/api/v1/users/john")
+   {:user-id integer?
+    :email   "john@example.com"})
 
-``` clojure
-(require '[restpect.core :refer [created]]
-         '[restpect.json :refer [PUT]]
-         '[clojure.test :refer [deftest]])
+  ;; expect the response body to be a collection that contains at least one
+  ;; element that has a :user-id integer and the given :email
+  (ok
+   (GET "http://example.com/api/v1/users/")
+   #{{:user-id integer?
+      :email   "john@example.com"}})
 
-(deftest create-user
-  (created (PUT "http://example.com/api/v1/users/john" {:first-name "John"
-                                                        :last-name  "Doe"
-                                                        :email      "john@example.com"})
-           {:first-name "John"
-            :last-name  "Doe"
-            :email      "john@example.com"
-            :user-id    integer?}))
+  ;; expect 404 status and a body with a :message string that contains "not found"
+  (not-found
+   (GET "http://example.com/api/v1/users/john")
+   {:message #"not found"}))
 ```
 
 ## Installation
