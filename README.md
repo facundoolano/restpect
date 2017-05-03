@@ -1,6 +1,6 @@
 # restpect
 
-Restpect provides a set of functions to write succint and readable
+Restpect is a small Clojure library that provides a set of functions to write succint and readable
 integration tests over RESTful APIs.
 
 ```clojure
@@ -35,7 +35,7 @@ integration tests over RESTful APIs.
 
 ## Installation
 
-Add the following to your project map as a dependency:
+Add the following to your project `:dependencies`:
 
 ```clojure
 [restpect "0.2.1"]
