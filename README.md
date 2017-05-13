@@ -27,6 +27,8 @@ integration tests over RESTful APIs.
    #{{:user-id integer?
       :email   "john@example.com"}})
 
+  (ok (DELETE "http://example.com/api/v1/users/john"))
+
   ;; expect 404 status and a body with a :message string that contains "not found"
   (not-found
    (GET "http://example.com/api/v1/users/john")
