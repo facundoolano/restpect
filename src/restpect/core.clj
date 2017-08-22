@@ -154,6 +154,7 @@
 (def range-not-satisfiable (status-shorthand 416))
 (def expectation-failed (status-shorthand 417))
 (def im-a-teapot (status-shorthand 418))
+(def unprocessable-entity (status-shorthand 422))
 
 (def internal-error (status-shorthand 500))
 (def not-implemented (status-shorthand 501))
